@@ -92,8 +92,52 @@ try {
     @(
         "HKCR:\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}",
         "HKCR:\Wow6432Node\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}",
-        "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{018D5C66-4533-4307-9B53-224DE2ED1FE6}"
+        "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{018D5C66-4533-4307-9B53-224DE2ED1FE6}",
+        "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\StorageProvider\OneDrive",
+        "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\StorageProviderStatus\OneDrive"
     ) | ForEach-Object { Remove-Item -Path $_ -Recurse -Force }
+
+    # Registry cleanup
+    $runNotificationPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\RunNotification"
+    if (Test-Path $runNotificationPath) {
+        Get-Item -Path $runNotificationPath | 
+        Select-Object -ExpandProperty Property | 
+        Where-Object { $_ -like "StartupTNotiOneDrive*" -or $_ -like "StartupTNotiMicrosoftEdgeAutoLaunch*" } | 
+        ForEach-Object { Remove-ItemProperty -Path $runNotificationPath -Name $_ -Force }
+    }
+
+    # Registry cleanup
+    $compatStorePath = "HKCU:\Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Compatibility Assistant\Store"
+    if (Test-Path $compatStorePath) {
+        Get-Item -Path $compatStorePath |
+        Select-Object -ExpandProperty Property |
+        Where-Object { $_ -like "*OneDrive*" } |
+        ForEach-Object { Remove-ItemProperty -Path $compatStorePath -Name $_ -Force }
+    }
+
+    # Registry cleanup
+    $winlogonPath = "HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon"
+    if (Test-Path $winlogonPath) {
+        Remove-ItemProperty -Path $winlogonPath -Name "ExcludeProfileDirs" -Force -ErrorAction SilentlyContinue
+    }
+
+    # Registry cleanup
+    $regAppsPath = "HKCU:\Software\RegisteredApplications"
+    if (Test-Path $regAppsPath) {
+        Remove-ItemProperty -Path $regAppsPath -Name "OneDrive" -Force -ErrorAction SilentlyContinue
+    }
+
+    # Shell Folders edit
+    $username = $env:USERNAME
+    $shellFoldersPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
+    
+    # Edit folders
+    Set-ItemProperty -Path $shellFoldersPath -Name "My Music" -Value "C:\Users\$username\Music" -Type String -Force
+    Set-ItemProperty -Path $shellFoldersPath -Name "My Pictures" -Value "C:\Users\$username\Pictures" -Type String -Force
+    Set-ItemProperty -Path $shellFoldersPath -Name "My Video" -Value "C:\Users\$username\Videos" -Type String -Force
+    Set-ItemProperty -Path $shellFoldersPath -Name "Personal" -Value "C:\Users\$username\Documents" -Type String -Force
+    Set-ItemProperty -Path $shellFoldersPath -Name "Desktop" -Value "C:\Users\$username\Desktop" -Type String -Force
+    Set-ItemProperty -Path $shellFoldersPath -Name "Favorites" -Value "C:\Users\$username\Favorites" -Type String -Force
 
     # Restart Explorer
     Get-Process explorer | Stop-Process -Force
@@ -101,4 +145,4 @@ try {
     Start-Process explorer
 }
 catch {}
-exit 
+exit
