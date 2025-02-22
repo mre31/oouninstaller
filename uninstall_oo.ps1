@@ -102,7 +102,7 @@ try {
     if (Test-Path $runNotificationPath) {
         Get-Item -Path $runNotificationPath | 
         Select-Object -ExpandProperty Property | 
-        Where-Object { $_ -like "StartupTNotiOneDrive*" -or $_ -like "StartupTNotiMicrosoftEdgeAutoLaunch*" } | 
+        Where-Object { $_ -like "StartupTNotiOneDrive*" } | 
         ForEach-Object { Remove-ItemProperty -Path $runNotificationPath -Name $_ -Force }
     }
 
